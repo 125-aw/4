@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钢铁洪流 IRON TORRENT</title>
+    <link rel="stylesheet" href="css/style.css?v=20260819-iron10">
+</head>
+<body>
+    <!-- 开场动画：MECHREVO 品牌 + 钢铁洪流 Logo（3s） -->
+    <div id="intro-screen" class="intro-screen">
+        <div class="intro-brand">MECHREVO</div>
+        <div class="intro-divider"></div>
+        <div class="intro-title">钢 铁 洪 流</div>
+        <div class="intro-subtitle">IRON TORRENT : CYBER TANK OPS</div>
+        <div class="intro-skip">点击跳过</div>
+    </div>
+
+    <!-- 游戏主容器 -->
+    <div id="game-container">
+        <!-- 主画布：渲染游戏世界 -->
+        <canvas id="game-canvas" width="1120" height="800"></canvas>
+
+        <!-- HUD 覆盖层 -->
+        <div id="hud">
+            <!-- 左上：生命与护盾 -->
+            <div class="hud-panel hud-top-left">
+                <div class="hud-row">
+                    <span class="hud-icon hp-icon">♥</span>
+                    <span id="hp-value" class="hud-value">5</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">SHIELD</span>
+                    <div class="energy-bar"><div id="shield-bar" class="energy-fill"></div></div>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">BOOST</span>
+                    <div class="energy-bar"><div id="boost-bar" class="energy-fill boost"></div></div>
+                </div>
+                <div class="hud-row oc-row">
+                    <span class="hud-label">超频</span>
+                    <div class="energy-bar oc-bar-wrap">
+                        <div id="oc-bar" class="energy-fill oc-fill"></div>
+                        <span id="oc-ready" class="oc-ready hidden">就绪 [SHIFT]</span>
+                    </div>
+                    <button id="oc-btn" class="oc-btn" title="超频（Shift）">超 频</button>
+                </div>
+            </div>
+
+            <!-- 右上：波数与击毁数 -->
+            <div class="hud-panel hud-top-right">
+                <div class="hud-row">
+                    <span class="hud-label">WAVE</span>
+                    <span id="wave-value" class="hud-value">1</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">DESTROY</span>
+                    <span id="kill-value" class="hud-value">0</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">SCORE</span>
+                    <span id="score-value" class="hud-value">0</span>
+                </div>
+            </div>
+
+            <!-- 左下：武器等级 -->
+            <div class="hud-panel hud-bottom-left">
+                <span class="hud-label">WEAPON LV</span>
+                <div id="weapon-level" class="weapon-icons"></div>
+            </div>
+
+            <!-- 左侧：按键提示（新手友好，仅战斗中显示） -->
+            <div id="controls-hint" class="controls-hint hidden">
+                <div class="controls-hint-title">按键</div>
+                <div class="controls-hint-row"><span class="ck">W A S D</span><span class="cl">移动</span></div>
+                <div class="controls-hint-row"><span class="ck">鼠标 / J</span><span class="cl">开火</span></div>
+                <div class="controls-hint-row"><span class="ck">Shift</span><span class="cl">加速</span></div>
+                <div class="controls-hint-row"><span class="ck">1~5</span><span class="cl">技能</span></div>
+                <div class="controls-hint-row"><span class="ck">N</span><span class="cl">跳关</span></div>
+                <div class="controls-hint-row"><span class="ck">P</span><span class="cl">暂停</span></div>
+            </div>
+
+            <!-- 右下：小地图由 Canvas 绘制；此处放置道具状态 + 跳关（移至顶部中央避免与小地图重叠） -->
+            <div class="hud-panel hud-top-center">
+                <div id="powerup-status" class="powerup-status"></div>
+            </div>
+            <button id="skip-wave-btn" class="hud-skip-btn floating-skip" style="pointer-events:auto;">↯ 跳关 N</button>
+
+            <!-- 右下角品牌字（与小地图同侧，位于其下方） -->
+            <div id="brand-mark" class="brand-mark">MECHREVO</div>
+
+            <!-- 顶部技能栏 -->
+            <div id="skill-bar" class="skill-bar">
+                <div class="skill-slot" data-slot="0"><span class="skill-key">1</span><span class="skill-name">护盾</span><span class="skill-count" id="sc-0">×0</span></div>
+                <div class="skill-slot" data-slot="1"><span class="skill-key">2</span><span class="skill-name">速射</span><span class="skill-count" id="sc-1">×0</span></div>
+                <div class="skill-slot" data-slot="2"><span class="skill-key">3</span><span class="skill-name">穿甲</span><span class="skill-count" id="sc-2">×0</span></div>
+                <div class="skill-slot" data-slot="3"><span class="skill-key">4</span><span class="skill-name">地雷</span><span class="skill-count" id="sc-3">×0</span></div>
+                <div class="skill-slot skill-slot-ult" data-slot="4"><span class="skill-key">5</span><span class="skill-name">清屏</span><span class="skill-count" id="sc-4">×1</span></div>
+            </div>
+
+            <!-- Boss 血条（默认隐藏） -->
+            <div id="boss-bar-wrap" class="boss-bar-wrap hidden">
+                <div class="boss-bar-label">⚠ <span id="boss-name">BOSS</span></div>
+                <div class="boss-bar"><div id="boss-bar" class="boss-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <!-- 开始菜单 -->
+        <div id="menu-screen" class="overlay">
+            <div class="overlay-content glass menu-full">
+                <div class="menu-hero">
+                    <h1 class="title">钢铁<span class="title-accent">洪流</span></h1>
+                    <p class="subtitle">IRON&nbsp;TORRENT&nbsp;:&nbsp;CYBER&nbsp;TANK&nbsp;OPS</p>
+                    <div class="menu-tagline">—— 赛博纪元 2088 · 前线指挥官，准备出征 ——</div>
+                </div>
+                <div class="menu-info-panel">
+                    <div class="menu-col">
+                        <h4 class="menu-col-title">移动控制</h4>
+                        <p><span class="key-cap">W A S D</span> / <span class="key-cap">方向键</span></p>
+                        <p><span class="key-cap">Shift</span> 加速冲刺（耗能量）/ 满格超频</p>
+                    </div>
+                    <div class="menu-col">
+                        <h4 class="menu-col-title">战斗控制</h4>
+                        <p><span class="key-cap">鼠标左键</span> / <span class="key-cap">Space</span> 开火</p>
+                        <p><span class="key-cap">1~5</span> 施放技能 &nbsp; <span class="key-cap">N</span> 跳关</p>
+                    </div>
+                    <div class="menu-col">
+                        <h4 class="menu-col-title">系统</h4>
+                        <p><span class="key-cap">Esc</span> 暂停 &nbsp; <span class="key-cap">P</span> 暂停/继续</p>
+                        <p><span class="key-cap">M</span> 静音 &nbsp; <span class="key-cap">~</span> 开发者控制台</p>
+                    </div>
+                </div>
+                <div class="menu-btn-row">
+                    <button id="start-btn" class="neon-btn large">开 始 战 斗</button>
+                    <button id="about-btn" class="neon-btn ghost">关 于</button>
+                    <button id="stats-btn" class="neon-btn ghost">战 报 统 计</button>
+                    <button id="replay-btn" class="neon-btn ghost">录 像 回 放</button>
+                    <button id="daily-btn" class="neon-btn ghost">每 日 挑 战</button>
+                    <button id="settings-btn" class="neon-btn ghost">设 置</button>
+                </div>
+                <div class="menu-footer">v2.0 · 钢铁洪流 · HTML5 Canvas · MECHREVO</div>
+            </div>
+        </div>
+
+        <!-- 关于界面 -->
+        <div id="about-screen" class="overlay hidden">
+            <div class="overlay-content glass about-content">
+                <h2 class="title-sm accent">游 戏 说 明</h2>
+                <div class="about-body">
+                    <p><b class="accent-text">《钢铁洪流 IRON TORRENT》</b> — 俯视角科技像素坦克射击。</p>
+                    <p>共 <b class="accent-text">15 关</b>，每 5 关进战 Boss；击毁敌人随机掉落技能与道具。</p>
+                    <p>敌类型：<span style="color:#ff6680">普通</span> · <span style="color:#ff9a3c">快速</span> · <span style="color:#b44dff">装甲</span> · <span style="color:#00ffcc">智能（预判走位）</span>。</p>
+                    <p>技能列表（1~5）：<span class="skill-ic s1">1 护盾</span> · <span class="skill-ic s2">2 速射</span> · <span class="skill-ic s3">3 装甲</span> · <span class="skill-ic s4">4 地雷</span> · <span class="skill-ic s5">5 清屏</span>。</p>
+                    <p>道具列表：⭐火力升级 · 🛡️护盾 · ❤️回血 · 💨加速 · 🏠基地加固 · 💥清屏 · 1UP 奖励生命 · ⚡EMP（瘫痪敌机）。</p>
+                    <p>障碍物：砖墙可打穿 · 钢墙需最高火力 · 草丛隐身 · 水域减速。<b class="accent-text">保护鹰翼基地！</b></p>
+                    <p class="about-tip">💡 建议先选 <b>标准型</b> 坦克，第 1 关熟悉节奏；智能型敌人会预判你的走位，注意变向。</p>
+                </div>
+                <button id="about-back-btn" class="neon-btn">返 回</button>
+            </div>
+        </div>
+
+        <!-- 战报统计界面 -->
+        <div id="stats-screen" class="overlay hidden">
+            <div class="overlay-content glass stats-content">
+                <h2 class="title-sm accent">★ 战 报 简 报 ★</h2>
+                <div class="stats-body">
+                    <div class="stats-row"><span class="stats-label">总游玩时间</span><span id="st-playtime" class="stats-value">00:00:00</span></div>
+                    <div class="stats-row"><span class="stats-label">总击毁数</span><span id="st-kills" class="stats-value">0</span></div>
+                    <div class="stats-row"><span class="stats-label">通关次数</span><span id="st-clears" class="stats-value">0</span></div>
+                    <div class="stats-row"><span class="stats-label">Boss 击杀数</span><span id="st-bosskills" class="stats-value">0</span></div>
+                    <div class="stats-row"><span class="stats-label">Boss 击杀率</span><span id="st-bossrate" class="stats-value">0%</span></div>
+                    <div class="stats-row"><span class="stats-label">最速通关</span><span id="st-besttime" class="stats-value">--:--</span></div>
+                    <div class="stats-row"><span class="stats-label">最常用坦克</span><span id="st-favtank" class="stats-value">--</span></div>
+                    <div class="stats-row"><span class="stats-label">超频击杀</span><span id="st-ockills" class="stats-value">0</span></div>
+                    <div class="stats-row"><span class="stats-label">录像观看</span><span id="st-replays" class="stats-value">0</span></div>
+                </div>
+                <button id="stats-back-btn" class="neon-btn">返 回</button>
+            </div>
+        </div>
+
+        <!-- 设置界面 -->
+        <div id="settings-screen" class="overlay hidden">
+            <div class="overlay-content glass settings-content">
+                <h2 class="title-sm">设 置</h2>
+                <div class="settings-body">
+                    <div class="settings-row">
+                        <span class="settings-label">画质</span>
+                        <div class="settings-quality">
+                            <button class="quality-btn" data-quality="low">低</button>
+                            <button class="quality-btn" data-quality="mid">中</button>
+                            <button class="quality-btn" data-quality="high">高</button>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">音效</span>
+                        <button id="set-sound-toggle" class="toggle-btn"><span class="toggle-knob"></span></button>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">音乐</span>
+                        <button id="set-music-toggle" class="toggle-btn"><span class="toggle-knob"></span></button>
+                    </div>
+                    <div class="settings-row">
+                        <span class="settings-label">音量</span>
+                        <div class="settings-volume">
+                            <input id="set-vol-slider" type="range" min="0" max="1" step="0.05" value="0.7">
+                            <span id="set-vol-value" class="settings-vol-val">70%</span>
+                        </div>
+                    </div>
+                    <div class="settings-tip">设置将自动保存到本地，下次进入时生效。</div>
+                </div>
+                <button id="settings-back-btn" class="neon-btn">返 回</button>
+            </div>
+        </div>
+
+        <!-- 角色选择界面 -->
+        <div id="char-screen" class="overlay hidden">
+            <div class="overlay-content glass char-content">
+                <h2 class="title-sm">选 择 战 车</h2>
+                <div id="char-list" class="char-list"></div>
+                <div class="char-detail" id="char-detail"></div>
+                <div class="menu-btn-row">
+                    <button id="char-back-btn" class="neon-btn ghost">返回</button>
+                    <button id="char-next-btn" class="neon-btn">下一步 · 选关卡</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 关卡选择界面 -->
+        <div id="level-screen" class="overlay hidden">
+            <div class="overlay-content glass level-content">
+                <h2 class="title-sm">选 择 关 卡</h2>
+                <div class="level-hint">已解锁关卡可直接点击 · <b class="accent-text">N</b> 键在战斗中跳过当前波次</div>
+                <div id="level-grid" class="level-grid"></div>
+                <div class="menu-btn-row">
+                    <button id="level-back-btn" class="neon-btn ghost">返回选车</button>
+                    <button id="level-start-btn" class="neon-btn">出击！</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 暂停界面 -->
+        <div id="pause-screen" class="overlay hidden">
+            <div class="overlay-content glass">
+                <h2 class="title-sm">已 暂 停</h2>
+                <button id="resume-btn" class="neon-btn">继续战斗</button>
+                <button id="skip-btn-pause" class="neon-btn ghost">跳过本关 (N)</button>
+                <button id="restart-btn-pause" class="neon-btn ghost">重新开始</button>
+                <button id="exit-btn-pause" class="neon-btn ghost">返回菜单</button>
+            </div>
+        </div>
+
+        <!-- 关卡结算面板（S/A/B/C 评价） -->
+        <div id="wave-result-screen" class="overlay hidden">
+            <div class="overlay-content glass wave-result-content">
+                <h2 class="title-sm accent">★ 关 卡 结 算 ★</h2>
+                <div class="wave-result-grade-wrap">
+                    <div class="wave-result-grade-label">评 价</div>
+                    <div id="wr-grade" class="wave-result-grade">S</div>
+                </div>
+                <div class="wave-result-stats">
+                    <div class="wave-result-row"><span>WAVE</span><span id="wr-wave">1</span></div>
+                    <div class="wave-result-row"><span>击毁数</span><span id="wr-kills">0</span></div>
+                    <div class="wave-result-row"><span>最高连杀</span><span id="wr-combo">0</span></div>
+                    <div class="wave-result-row"><span>道具拾取</span><span id="wr-pickups">0</span></div>
+                    <div class="wave-result-row"><span>用时</span><span id="wr-time">00:00</span></div>
+                </div>
+                <div class="menu-btn-row">
+                    <button id="wr-retry-btn" class="neon-btn ghost">重新挑战</button>
+                    <button id="wr-next-btn" class="neon-btn">下一关</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏结束界面 -->
+        <div id="gameover-screen" class="overlay hidden">
+            <div class="overlay-content glass">
+                <h2 class="title-sm danger">战斗失败</h2>
+                <p class="result-stat">最终波数 <span id="final-wave">0</span></p>
+                <p class="result-stat">击毁数 <span id="final-kill">0</span></p>
+                <p class="result-stat">总分 <span id="final-score">0</span></p>
+                <div class="result-stat cg-sub" id="go-sub">· 敌军占领了战区 · 指挥部已呼叫后备支援 ·</div>
+                <button id="restart-btn" class="neon-btn">再次出击</button>
+                <button id="exit-btn-over" class="neon-btn ghost">返回菜单</button>
+            </div>
+        </div>
+
+        <!-- 胜利界面 -->
+        <div id="victory-screen" class="overlay hidden">
+            <div class="overlay-content glass">
+                <h2 class="title-sm accent">胜利!</h2>
+                <p class="result-stat">通关波数 <span id="vic-wave">0</span></p>
+                <p class="result-stat">总分 <span id="vic-score">0</span></p>
+                <p class="result-stat">击毁敌军 <span id="vic-kills">0</span></p>
+                <div class="result-stat cg-sub" id="vic-sub">· 所有战区已收复 · 赛博之都和平之光再度降临 ·</div>
+                <button id="restart-btn-vic" class="neon-btn">再来一局</button>
+                <button id="exit-btn-vic" class="neon-btn ghost">返回菜单</button>
+            </div>
+        </div>
+
+        <!-- CG 动画覆盖层（战斗结束放映） -->
+        <div id="cg-layer" class="cg-layer hidden">
+            <canvas id="cg-canvas" class="cg-canvas"></canvas>
+            <div class="cg-inner">
+                <div id="cg-title" class="cg-title"></div>
+                <div id="cg-subtitle" class="cg-subtitle"></div>
+            </div>
+        </div>
+
+        <!-- 嘲讽气泡层 -->
+        <div id="taunt-layer" class="taunt-layer"></div>
+
+        <!-- 中央提示文字（LEVEL UP 等） -->
+        <div id="center-toast" class="center-toast hidden"></div>
+
+        <!-- 静音指示 -->
+        <div id="mute-indicator" class="mute-indicator hidden">🔇 MUTED</div>
+
+        <!-- 触屏控件（仅触屏设备显示） -->
+        <div id="touch-stick" class="touch-stick">
+            <div id="touch-knob" class="touch-knob"></div>
+        </div>
+        <button id="touch-fire" class="touch-fire">FIRE</button>
+    </div>
+
+    <!-- 脚本按依赖顺序加载 -->
+    <script src="js/config.js?v=20260819-iron10"></script>
+    <script src="js/utils.js?v=20260819-iron10"></script>
+    <script src="js/audioManager.js?v=20260819-iron10"></script>
+    <script src="js/particle.js?v=20260819-iron10"></script>
+    <script src="js/obstacle.js?v=20260819-iron10"></script>
+    <script src="js/bullet.js?v=20260819-iron10"></script>
+    <script src="js/powerup.js?v=20260819-iron10"></script>
+    <script src="js/tank.js?v=20260819-iron10"></script>
+    <script src="js/enemyTank.js?v=20260819-iron10"></script>
+    <script src="js/bossTank.js?v=20260819-iron10"></script>
+    <script src="js/game.js?v=20260819-iron10"></script>
+</body>
+</html>
